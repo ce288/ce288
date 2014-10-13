@@ -35,7 +35,8 @@ public class TaskRepository extends UnicastRemoteObject implements TaskRepositor
 
 	}
 
-	public void addTask(Task task) {
+	@Override
+	public void addTask(Task task) throws RemoteException {
 		synchronized (lock) {
 			pendingTasks.add(task);
 		}
