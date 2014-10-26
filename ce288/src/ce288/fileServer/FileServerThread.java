@@ -11,13 +11,12 @@ import org.slf4j.LoggerFactory;
 
 public class FileServerThread extends Thread {
 
-	public static final Logger logger = LoggerFactory
-			.getLogger(FileServerThread.class);
+	public static final Logger logger = LoggerFactory.getLogger(FileServerThread.class);
 
-	private String path;
+	private FileServer parent;
 
-	public FileServerThread(String path) {
-		this.path = path;
+	public FileServerThread(FileServer parent) {
+		this.parent = parent;
 	}
 
 	@Override
@@ -28,12 +27,11 @@ public class FileServerThread extends Thread {
 			ServerSocket serverSocket = new ServerSocket(FileServer.PORT);
 			while (true) {
 				Socket socket = serverSocket.accept();
-				logger.info("Received connection from {}.",
-						socket.getInetAddress());
-				executor.execute(new FileServerWorker(socket, path));
+				logger.info("Received connection from {}.", socket.getInetAddress());
+				executor.execute(new FileServerWorker(socket, parent.getPath()));
 			}
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
-	};
+	}
 }
