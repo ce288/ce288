@@ -25,7 +25,7 @@ public class DumbAnalyser extends AbstractFileAnalyser {
 			while ((num = input.read(buffer)) > 0) {
 				logger.debug("Received {} bytes: {}", num, new String(buffer, 0, num).trim());
 			}
-			stub.setResult(clientId, task.getId(), new Result());
+			stub.setResult(clientId, task.getId(), new Result(task.getId()));
 		} catch (IOException e) {
 			logger.error(e.getMessage(), e);
 		}
