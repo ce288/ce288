@@ -9,7 +9,10 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -18,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import ce288.tasks.FileFormat;
 import ce288.tasks.Task;
 import ce288.tasks.TaskRepositoryInterface;
+import ce288.tasks.TaskStatus;
 
 public class FileServer {
 
@@ -31,17 +35,20 @@ public class FileServer {
 	public static final int PORT = 12345;
 
 	private InetAddress address;
-	
+
 	private String path;
 
 	private TaskRepositoryInterface stub;
-	
-	private HashMap<String, UUID> tasks;
-	
+
+	private HashMap<String, List<UUID>> tasks;
+
 	public FileServer(String path, String addr) {
 		logger.info("File server started.");
+		tasks = new HashMap<>();
 		setPath(path);
-		new FileServerThread(this).start();
+		Thread fileServerThread = new Thread(new FileServerThread(this));
+		fileServerThread.setDaemon(true);
+		fileServerThread.start();
 
 		try {
 			Registry registry = LocateRegistry.getRegistry();
@@ -60,15 +67,15 @@ public class FileServer {
 		// Receive commands from user
 		new Thread(new ConsoleThread(this)).start();
 	}
-	
+
 	public InetAddress getAddress() {
 		return address;
 	}
-	
+
 	public void setAddress(String addr) throws UnknownHostException {
 		address = InetAddress.getByName(addr);
 	}
-	
+
 	public String getPath() {
 		synchronized (path) {
 			return path;
@@ -80,7 +87,7 @@ public class FileServer {
 			this.path = path;
 		}
 	}
-	
+
 	public void addFile(String filename) throws FileNotFoundException, RemoteException {
 		addFile(filename, DEFAULT_SECTION_SIZE);
 	}
@@ -99,14 +106,28 @@ public class FileServer {
 			long length = Math.min(sectionSize, size - pos);
 			Task task = new Task(format, address, filename, pos, length);
 			stub.addTask(task);
-			tasks.put(filename, task.getId());
+			if (tasks.containsKey(filename)) {
+				tasks.get(filename).add(task.getId());
+			} else {
+				List<UUID> ids = new ArrayList<UUID>();
+				ids.add(task.getId());
+				tasks.put(filename, ids);
+			}
 			logger.debug("Added task {} for file {}.", task.getId(), filename);
 		}
 	}
 
+	public TaskStatus getStatus(UUID taskId) throws RemoteException {
+		return stub.getStatus(taskId);
+	}
+	
+	public Map<String, List<UUID>> getTasks() {
+		return tasks;
+	}
+
 	private FileFormat preprocess(File file) {
 		// TODO definir o formato do arquivo
-		return null;
+		return FileFormat.EMBRACE;
 	}
 
 	public static void main(String[] args) {

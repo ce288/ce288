@@ -14,4 +14,6 @@ public interface TaskRepositoryInterface extends Remote {
 	
 	public void addTask(Task task) throws RemoteException;
 	
+	public TaskStatus getStatus(UUID taskId) throws RemoteException;
+	
 }

@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FileServerThread extends Thread {
+public class FileServerThread implements Runnable {
 
 	public static final Logger logger = LoggerFactory.getLogger(FileServerThread.class);
 
