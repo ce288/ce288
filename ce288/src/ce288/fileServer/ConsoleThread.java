@@ -50,11 +50,14 @@ public class ConsoleThread implements Runnable {
 				processStatus(tokens);
 			} else if (command.startsWith("tasks")) {
 				processTasks(tokens);
+			} else if (command.startsWith("results")) {
+				processResults(tokens);
 			} else if (command.startsWith("help")) {
 				System.out.println("Command list:");
 				System.out.println("  add path [SECTION_SIZE]");
 				System.out.println("  ip [NEW_IP]");
 				System.out.println("  path [NEW_PATH]");
+				System.out.println("  results [OUTPUT_FILE_PATH]");
 				System.out.println("  status");
 				System.out.println("  tasks [nostatus]");
 			} else {
@@ -140,6 +143,25 @@ public class ConsoleThread implements Runnable {
 				}
 				System.out.print("\n");
 			}
+		}
+	}
+
+	private void processResults(Iterator<String> tokens) {
+		if (tokens.hasNext()) {
+			try {
+				String filename = tokens.next();
+				if (tokens.hasNext()) {
+					String outputPath = tokens.next();
+					parent.getResults(filename, outputPath);
+				} else {
+					parent.getResults(filename);
+				}
+			} catch (IOException e) {
+				System.out.println("ERROR: " + e.getMessage());
+			}
+
+		} else {
+			System.out.println("Invalid syntax: results FILENAME");
 		}
 	}
 

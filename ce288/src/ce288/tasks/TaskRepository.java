@@ -2,6 +2,7 @@ package ce288.tasks;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -109,6 +110,19 @@ public class TaskRepository extends UnicastRemoteObject implements TaskRepositor
 			}
 		}
 		logger.info("Client {} finished task {}.", clientId, taskId);
+	}
+
+	@Override
+	public List<ResultLog> getResult(List<UUID> taskIds) throws RemoteException {
+		ArrayList<ResultLog> list = new ArrayList<>();
+		for (UUID taskId : taskIds) {
+			if (results.containsKey(taskId)) {
+				list.addAll(results.get(taskId));
+			} else {
+				throw new RemoteException("There is no result for task ID " + taskId.toString());
+			}
+		}
+		return list;
 	}
 
 	@Override

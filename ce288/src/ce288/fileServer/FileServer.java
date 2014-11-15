@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.NotBoundException;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import ce288.tasks.FileFormat;
 import ce288.tasks.FileFormatException;
+import ce288.tasks.Result.ResultLog;
 import ce288.tasks.Task;
 import ce288.tasks.TaskRepositoryInterface;
 import ce288.tasks.TaskStatus;
@@ -88,6 +90,33 @@ public class FileServer {
 	public void setPath(String path) {
 		synchronized (path) {
 			this.path = path;
+		}
+	}
+	
+	public void getResults(String filename) throws IOException {
+		getResults(filename, null);
+	}
+	
+	public void getResults(String filename, String path) throws IOException {
+		if (!tasks.containsKey(filename)) {
+			throw new FileNotFoundException("There are no tasks for file " + filename);
+		}
+		List<ResultLog> resultLogs = stub.getResult(tasks.get(filename));
+		
+		PrintStream out;
+		if (path != null) {
+			out = new PrintStream(path);
+		} else {
+			out = System.out;
+		}
+		
+		out.println("offset\tmessage");
+		for (ResultLog result : resultLogs) {
+			out.printf("%d\t%s\n", result.getPos(), result.getMsg());
+		}
+		
+		if (path != null) {
+			out.close();
 		}
 	}
 
