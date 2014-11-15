@@ -17,7 +17,7 @@ public class DumbAnalyser extends AbstractFileAnalyser {
 	public final static Logger logger = LoggerFactory.getLogger(DumbAnalyser.class);
 	
 	@Override
-	public void process(UUID clientId, InputStream in, Task task, TaskRepositoryInterface stub) {
+	public void process(UUID clientId, InputStream in, Task task, TaskRepositoryInterface stub) throws FileAnalyserException {
 		BufferedInputStream input = new BufferedInputStream(in);
 		int num;
 		byte[] buffer = new byte[8192];

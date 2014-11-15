@@ -8,6 +8,6 @@ import ce288.tasks.TaskRepositoryInterface;
 
 public abstract class AbstractFileAnalyser {
 	
-	public abstract void process(UUID clientId, InputStream in, Task task, TaskRepositoryInterface stub);
+	public abstract void process(UUID clientId, InputStream in, Task task, TaskRepositoryInterface stub) throws FileAnalyserException;
 
 }
