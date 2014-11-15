@@ -1,7 +1,9 @@
 package ce288.fileServer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -19,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ce288.tasks.FileFormat;
+import ce288.tasks.FileFormatException;
 import ce288.tasks.Task;
 import ce288.tasks.TaskRepositoryInterface;
 import ce288.tasks.TaskStatus;
@@ -88,21 +91,17 @@ public class FileServer {
 		}
 	}
 
-	public void addFile(String filename) throws FileNotFoundException, RemoteException {
+	public void addFile(String filename) throws FileNotFoundException, FileFormatException, RemoteException, IOException {
 		addFile(filename, DEFAULT_SECTION_SIZE);
 	}
 
-	public void addFile(String filename, long sectionSize) throws FileNotFoundException,
-			RemoteException {
-		File file = new File(filename);
+	public void addFile(String filename, long sectionSize) throws FileNotFoundException, FileFormatException, RemoteException, IOException {
+		String fullPath = this.path + File.separator + filename;
+		File file = new File(fullPath);
 		long size = file.length();
 
-		if (size == 0L) {
-			throw new FileNotFoundException(filename + " is not a valid file name.");
-		}
-
-		FileFormat format = preprocess(file);
-		for (long pos = 0; pos < size; pos += sectionSize) {
+			FileFormat format = preprocess(fullPath);
+			for (long pos = 0; pos < size; pos += sectionSize) {
 			long length = Math.min(sectionSize, size - pos);
 			Task task = new Task(format, address, filename, pos, length);
 			stub.addTask(task);
@@ -120,14 +119,36 @@ public class FileServer {
 	public TaskStatus getStatus(UUID taskId) throws RemoteException {
 		return stub.getStatus(taskId);
 	}
-	
+
 	public Map<String, List<UUID>> getTasks() {
 		return tasks;
 	}
 
-	private FileFormat preprocess(File file) {
-		// TODO definir o formato do arquivo
-		return FileFormat.EMBRACE;
+	private FileFormat preprocess(String filename) throws FileFormatException, IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(filename));
+		boolean isHeader;
+		do {
+			String headline = reader.readLine();
+			isHeader = headline.length() > 22 && !Character.isDigit(headline.charAt(1))
+					&& !Character.isDigit(headline.charAt(2))
+					&& !Character.isDigit(headline.charAt(5))
+					&& !Character.isDigit(headline.charAt(8))
+					&& !Character.isDigit(headline.charAt(9))
+					&& !Character.isDigit(headline.charAt(11))
+					&& !Character.isDigit(headline.charAt(15))
+					&& !Character.isDigit(headline.charAt(20))
+					&& !Character.isDigit(headline.charAt(22));
+			for (FileFormat format : FileFormat.values()) {
+				if (headline.indexOf(format.getMark()) > 0) {
+					reader.close();
+					logger.info("File format is: {}", format);
+					return format;
+				}
+			}
+		} while (isHeader);
+		reader.close();
+
+		throw new FileFormatException("Could not identify file format for file " + filename);
 	}
 
 	public static void main(String[] args) {

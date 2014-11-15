@@ -18,6 +18,7 @@ public class Server {
 	private TaskRepository tasks;
 
 	public Server() {
+		logger.info("Server started.");
 		try {
 			tasks = new TaskRepository();
 			UnicastRemoteObject.unexportObject(tasks, true);

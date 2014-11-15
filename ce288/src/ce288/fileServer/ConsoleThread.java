@@ -1,6 +1,7 @@
 package ce288.fileServer;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ce288.tasks.FileFormatException;
 import ce288.tasks.TaskStatus;
 
 public class ConsoleThread implements Runnable {
@@ -72,11 +74,15 @@ public class ConsoleThread implements Runnable {
 				} else {
 					parent.addFile(filename);
 				}
-			} catch (FileNotFoundException e) {
-				System.out.println(e.getMessage());
 			} catch (RemoteException e) {
 				System.out.println("Could not connect to remote service.");
 				logger.error(e.getMessage(), e);
+			} catch (FileNotFoundException e) {
+				System.out.println(e.getMessage());
+			} catch (FileFormatException e) {
+				System.out.println(e.getMessage());
+			} catch (IOException e) {
+				System.out.println("Could not read " + filename);
 			}
 		} else {
 			System.out.println("Invalid syntax: add FILENAME");
