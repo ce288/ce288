@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.rmi.RemoteException;
 import java.util.UUID;
 
 import ce288.tasks.Result;
@@ -37,6 +38,11 @@ public class FileEmbrace extends AbstractFileAnalyser {
 			}
 			stub.setResult(clientId, task.getId(), result);
 		} catch (IOException e) {
+			try {
+				stub.setFailure(clientId, task.getId(), "Error while processing stream");
+			} catch (RemoteException e1) {
+				throw new FileAnalyserException("Error while setting failure in remote server", e);
+			}
 			throw new FileAnalyserException("Error while processing stream", e);
 		}
 	} // close process
