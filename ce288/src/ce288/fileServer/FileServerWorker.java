@@ -59,6 +59,7 @@ public class FileServerWorker implements Runnable {
 			int length = Integer.parseInt(line);
 
 			RandomAccessFile file = new RandomAccessFile(filename, "r");
+			length = (int) Math.min(length, file.length() - pos);
 			file.seek(pos);
 			FileChannel channel = file.getChannel();
 			ByteBuffer byteBuffer = ByteBuffer.allocateDirect(length);
@@ -82,7 +83,7 @@ public class FileServerWorker implements Runnable {
 			out.flush();
 			out.close();
 			socket.close();
-			logger.info("Closed connection from {}.", socket.getInetAddress().getHostName());
+			logger.info("Closed connection from {} after {} bytes.", socket.getInetAddress().getHostName(), totalRead);
 		} catch (IOException | NumberFormatException e) {
 			logger.error(e.getMessage(), e);
 		}

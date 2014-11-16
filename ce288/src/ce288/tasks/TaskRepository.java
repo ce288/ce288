@@ -118,6 +118,8 @@ public class TaskRepository extends UnicastRemoteObject implements TaskRepositor
 		for (UUID taskId : taskIds) {
 			if (results.containsKey(taskId)) {
 				list.addAll(results.get(taskId));
+				results.remove(taskId);
+				logger.info("Removed task {}", taskId);
 			} else {
 				throw new RemoteException("There is no result for task ID " + taskId.toString());
 			}
