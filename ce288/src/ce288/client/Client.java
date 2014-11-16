@@ -21,7 +21,7 @@ public class Client {
 	public final static Logger logger = LoggerFactory.getLogger(Client.class);
 
 	private UUID id;
-	
+
 	public Client() {
 		id = UUID.randomUUID();
 	}
@@ -30,7 +30,8 @@ public class Client {
 		logger.info("Client {} started.", id);
 		try {
 			Registry registry = LocateRegistry.getRegistry();
-			TaskRepositoryInterface stub = (TaskRepositoryInterface) registry.lookup("TaskRepository");
+			TaskRepositoryInterface stub = (TaskRepositoryInterface) registry
+					.lookup("TaskRepository");
 			while (true) {
 				Task task = stub.getNext(id);
 				if (task == null) {
@@ -39,16 +40,25 @@ public class Client {
 					logger.info("Client started task {}.", task.getId());
 					try {
 						Socket socket = new Socket(task.getLocation(), FileServer.PORT);
-						BufferedWriter out = new BufferedWriter(
-								new OutputStreamWriter(socket.getOutputStream()));
+						BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+								socket.getOutputStream()));
+
+						// Send filename
 						out.write(task.getFilename());
 						out.newLine();
-						out.write(Long.toString(task.getPosition()));
+
+						// Send file start position
+						long pos = Math.max(0, task.getPosition() - 100);
+						out.write(Long.toString(pos));
 						out.newLine();
-						out.write(Long.toString(task.getLength()));
+
+						// Send section length
+						out.write(Long.toString(task.getLength() + 200));
 						out.newLine();
+
 						out.flush();
-						AbstractFileAnalyser analyser = AbstractFileAnalyserFactory.getAnalyser(task.getFormat());
+						AbstractFileAnalyser analyser = AbstractFileAnalyserFactory
+								.getAnalyser(task.getFormat());
 						analyser.process(id, socket.getInputStream(), task, stub);
 						socket.close();
 						logger.info("Task {} finished.", task.getId());

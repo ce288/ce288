@@ -8,33 +8,89 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.rmi.RemoteException;
+import java.util.Calendar;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ce288.fileServer.FileServer;
 import ce288.tasks.Result;
 import ce288.tasks.Task;
 import ce288.tasks.TaskRepositoryInterface;
 
 public class FileEmbrace extends AbstractFileAnalyser {
 
+	public static final Logger logger = LoggerFactory.getLogger(FileEmbrace.class);
+
 	public FileEmbrace() {
 		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	public void process(UUID clientId, InputStream in, Task task, TaskRepositoryInterface stub) throws FileAnalyserException {
+	public void process(UUID clientId, InputStream in, Task task, TaskRepositoryInterface stub)
+			throws FileAnalyserException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-		
+
+		logger.debug("Task {} {}", task.getPosition(), task.getLength());
+
 		try {
 			String line;
 			Result result = new Result(task.getId());
 			long pos = task.getPosition();
+			Calendar lastCalendar = null;
+			Calendar calendar = Calendar.getInstance();
+			calendar.clear();
+			boolean header = true;
 			while ((line = reader.readLine()) != null) {
-
-				line = in.toString();
-				System.out.println("Varlei");
-				System.out.println(line);
-				result.addLog(pos, "Varlei");
+				long lineStart = pos;
 				pos += line.length();
+
+				// Discard lines at the beginning of the file that are header
+				// lines. After a non-header line is found, no other line is
+				// considered a header
+				header = FileServer.isHeader(line) && header;
+				if (header) {
+					logger.debug("Skipping line at {} because is header", lineStart);
+					continue;
+				}
+
+				// Discard line due to truncation at the beginning and at the
+				// end
+				if (lineStart == task.getPosition() || pos == task.getPosition() + task.getLength()) {
+					logger.debug("Skipping line at {} because is section start or end", lineStart);
+					continue;
+				}
+
+				// Reads the time values
+				String[] words = line.trim().split("\\s+", 6);
+				if (words.length < 6) {
+					result.addLog(lineStart, "Line is incomplete: " + line);
+				}
+				int day = Integer.valueOf(words[0]);
+				int month = Integer.valueOf(words[1]);
+				int year = Integer.valueOf(words[2]);
+				int hour = Integer.valueOf(words[3]);
+				int min = Integer.valueOf(words[4]);
+				calendar.set(year, month, day, hour, min);
+				if (lastCalendar == null) {
+					lastCalendar = Calendar.getInstance();
+					lastCalendar.clear();
+					lastCalendar.set(year, month, day, hour, min);
+				} else {
+					lastCalendar.add(Calendar.MINUTE, 1);
+					if (!calendar.equals(lastCalendar)) {
+						String msg = String.format(
+								"Not sequential, expected %02d %02d %04d  %02d %02d: %s",
+								lastCalendar.get(Calendar.DAY_OF_MONTH),
+								lastCalendar.get(Calendar.MONTH), lastCalendar.get(Calendar.YEAR),
+								lastCalendar.get(Calendar.HOUR_OF_DAY),
+								lastCalendar.get(Calendar.MINUTE), line);
+						result.addLog(lineStart, msg);
+						lastCalendar = calendar;
+					}
+				}
+
 			}
 			stub.setResult(clientId, task.getId(), result);
 		} catch (IOException e) {
@@ -45,23 +101,6 @@ public class FileEmbrace extends AbstractFileAnalyser {
 			}
 			throw new FileAnalyserException("Error while processing stream", e);
 		}
-	} // close process
+	}
 
-	public void teste(String message) {
-
-		int contador = 0;
-		while (contador < 40) {
-			System.out.println(message);
-			contador++;
-		}
-
-		return;
-
-	} // close teste
-
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	} // close main()
-
-} // close FileEmbrace
+}
