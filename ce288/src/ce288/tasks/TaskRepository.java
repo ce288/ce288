@@ -60,7 +60,7 @@ public class TaskRepository extends UnicastRemoteObject implements TaskRepositor
 		executingTasks = new HashMap<UUID, ExecutionInfo>();
 		pendingTasks = new LinkedList<Task>();
 		results = new HashMap<UUID, List<ResultLog>>();
-		new Thread(new ExpirationWatchdog(this, 2500)).start();
+		new Thread(new ExpirationWatchdog(this, 10000)).start();
 
 	}
 
@@ -96,6 +96,7 @@ public class TaskRepository extends UnicastRemoteObject implements TaskRepositor
 				if (executingTasks.get(key).isExpired()) {
 					ExecutionInfo info = executingTasks.remove(key);
 					logger.info("Task {} being executed by {} expired.", key, info.getClientId());
+					pendingTasks.addFirst(info.getTask());
 				}
 			}
 		}
