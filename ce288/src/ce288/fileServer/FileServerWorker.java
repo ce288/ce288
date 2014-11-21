@@ -57,6 +57,8 @@ public class FileServerWorker implements Runnable {
 				return;
 			}
 			int length = Integer.parseInt(line);
+			
+			logger.debug("Requested {} bytes at @{}", length, pos);
 
 			RandomAccessFile file = new RandomAccessFile(filename, "r");
 			length = (int) Math.min(length, file.length() - pos);
@@ -66,10 +68,11 @@ public class FileServerWorker implements Runnable {
 			byte[] byteArray = new byte[BUFSIZE];
 			int numRead, numGet;
 			int totalRead = 0;
-			while ((numRead = channel.read(byteBuffer)) != -1 || totalRead >= length) {
+			while ((numRead = channel.read(byteBuffer)) != -1 && totalRead < length) {
 				if (numRead == 0) {
 					continue;
 				}
+				byteBuffer.flip();
 				totalRead += numRead;
 				while (byteBuffer.hasRemaining()) {
 					numGet = Math.min(byteBuffer.remaining(), BUFSIZE);
@@ -77,6 +80,7 @@ public class FileServerWorker implements Runnable {
 					out.write(byteArray, 0, numGet);
 				}
 				byteBuffer.clear();
+				logger.debug("Sent {} bytes from a total of {}", totalRead, length);
 			}
 			file.close();
 
