@@ -64,10 +64,17 @@ public class FileEmbrace extends AbstractFileAnalyser {
 				// Reads the time values
 				String[] words = line.trim().split("\\s+", 6);
 				if (words.length < 6) {
-					String msg = String.format("Line %d is incomplete: %s", lineCounter, line);
-					logger.debug("@{} - {}", task.getPosition(), msg);
-					result.addLog(task.getPosition(), msg);
-					continue;
+					reader.mark(10);
+					if (reader.read() > 0) {
+						reader.reset();
+						String msg = String.format("Line %d is incomplete: %s", lineCounter, line);
+						logger.debug("@{} - {}", task.getPosition(), msg);
+						result.addLog(task.getPosition(), msg);
+						continue;
+					} else {
+						logger.debug("Skipping line {} because is section end: {}", lineCounter, line);
+						break;
+					}
 				}
 				try {
 					int day = Integer.valueOf(words[0]);
