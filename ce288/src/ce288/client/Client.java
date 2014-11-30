@@ -21,15 +21,17 @@ public class Client {
 	public final static Logger logger = LoggerFactory.getLogger(Client.class);
 
 	private UUID id;
+	private String rmiServerHostname; 
 
-	public Client() {
+	public Client(String rmiServerHostname) {
 		id = UUID.randomUUID();
+		this.rmiServerHostname = rmiServerHostname;
 	}
 
 	public void execute() {
 		logger.info("Client {} started.", id);
 		try {
-			Registry registry = LocateRegistry.getRegistry();
+			Registry registry = LocateRegistry.getRegistry(rmiServerHostname);
 			TaskRepositoryInterface stub = (TaskRepositoryInterface) registry
 					.lookup("TaskRepository");
 			while (true) {
@@ -73,7 +75,13 @@ public class Client {
 	}
 
 	public static void main(String[] args) {
-		Client client = new Client();
+		Client client;
+		if (args.length < 1) {
+			client = new Client("localhost");
+			logger.info("Missing rmi server hostname, using default value of localhost");
+		} else {
+			client = new Client(args[0]);
+		}
 		client.execute();
 	}
 }
